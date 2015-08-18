@@ -1,0 +1,107 @@
+<beans default-autowire="byName" default-init-method="init"
+       xmlns="http://www.springframework.org/schema/beans" xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd"
+        >
+    <context:component-scan base-package="com.pangolin.cheetah.service"/>
+    <bean
+            class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
+            >
+        <property name="locations" value="classpath:jdbc.properties"/>
+    </bean>
+
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+          destroy-method="close"
+            >
+        <property name="driverClassName" value="${jdbc.driverClassName}"/>
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        <!-- 设置连接池初始值 -->
+        <property name="initialSize" value="${jdbc.initialSize}"/>
+        <!-- 设置连接池连接数量最大值 -->
+        <property name="maxActive" value="${jdbc.maxActive}"/>
+        <!-- 设置连接池最小空闲连接数量 -->
+        <property name="minIdle" value="${jdbc.minIdle}"/>
+        <!-- 设置连接池最大空闲连接数量 -->
+        <property name="maxIdle" value="${jdbc.maxIdle}"/>
+        <!--设置连接等待时间-->
+        <property name="maxWait" value="${jdbc.maxWait}"/>
+        <!--获得连接时是否验证连接有效-->
+        <property name="testOnBorrow" value="${jdbc.testOnBorrow}"/>
+        <!--返回连接时是否验证连接有效-->
+        <property name="testOnReturn" value="${jdbc.testOnReturn}"/>
+        <!--连接空闲时是否验证连接有效-->
+        <property name="testWhileIdle" value="${jdbc.testWhileIdle}"/>
+        <!--验证连接有效的sql语句-->
+        <property name="validationQuery" value="${jdbc.validationQuery}"/>
+        <!--检查连接是否失效的时间间隔-->
+        <property name="timeBetweenEvictionRunsMillis" value="${jdbc.timeBetweenEvictionRunsMillis}"/>
+        <!--判断连接是否为空闲的连接最大空闲时间-->
+        <property name="minEvictableIdleTimeMillis" value="${jdbc.minEvictableIdleTimeMillis}"/>
+    </bean>
+
+    <bean id="sessionFactory"
+          class="org.springframework.orm.hibernate4.LocalSessionFactoryBean"
+            >
+        <property name="dataSource" ref="dataSource"/>
+        <property name="packagesToScan">
+            <list>
+                <value>com.pangolin.cheetah.entity</value>
+            </list>
+        </property>
+        <property name="hibernateProperties">
+            <value>
+                <!-- 设置数据库方言 -->
+                hibernate.dialect=${hibernate.dialect}
+                <!--设置自动创建|更新|验证数据库表结构 -->
+                hibernate.hbm2ddl.auto=${hibernate.auto}
+                <!-- 输出SQL语句到控制台 -->
+                hibernate.show_sql=${hibernate.show_sql}
+                <!-- 格式化输出到控制台的SQL语句 -->
+                hibernate.format_sql=${hibernate.format_sql}
+                <!-- 是否开启二级缓存 -->
+                hibernate.cache.use_second_level_cache=${hibernate.cache.use_second_level_cache}
+                <!--配置二级缓存产品 -->
+                hibernate.cache.region.factory_class=${hibernate.cache.region.factory_class}
+                <!--是否开启查询缓存 -->
+                hibernate.cache.use_query_cache=${hibernate.cache.use_query_cache}
+                hibernate.current_session_context_class=${hibernate.current_session_context_class}
+            </value>
+        </property>
+    </bean>
+
+    <bean id="txManager"
+          class="org.springframework.orm.hibernate4.HibernateTransactionManager"
+            >
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <tx:advice id="txAdvice" transaction-manager="txManager">
+        <tx:attributes>
+            <tx:method name="add*" propagation="REQUIRED"/>
+            <tx:method name="insert" propagation="REQUIRED"/>
+            <tx:method name="save*" propagation="REQUIRED"/>
+            <tx:method name="update*" propagation="REQUIRED"/>
+            <tx:method name="merge*" propagation="REQUIRED"/>
+            <tx:method name="set*" propagation="REQUIRED"/>
+            <tx:method name="delete*" propagation="REQUIRED"/>
+            <tx:method name="modify*" propagation="REQUIRED"/>
+            <tx:method name="find*" read-only="true"/>
+            <tx:method name="query*" read-only="true"/>
+            <tx:method name="get*" read-only="true"/>
+            <tx:method name="load*" read-only="true"/>
+            <tx:method name="list*" read-only="true"/>
+        </tx:attributes>
+    </tx:advice>
+
+    <aop:config expose-proxy="true">
+        <aop:pointcut id="txPointcut" expression="execution(public * com.pangolin.cheetah.service..*.*(..))"/>
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="txPointcut"/>
+    </aop:config>
+</beans>
